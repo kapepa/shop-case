@@ -1,4 +1,5 @@
 import { MaxWidthWrapper } from "@/components/max-width-wrapper";
+import { Steps } from "@/components/steps";
 import { FC, ReactNode } from "react";
 
 interface ConfigureLayoutProps {
@@ -10,6 +11,7 @@ const ConfigureLayout: FC<ConfigureLayoutProps> = ({ children }) => {
     <MaxWidthWrapper
       className="flex-1 flex flex-col"
     >
+      <Steps/>
       { children }
     </MaxWidthWrapper>
   )
