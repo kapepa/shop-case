@@ -1,6 +1,8 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
+import sharp from "sharp";
 import { z } from "zod";
+import prisma from "@/db";
  
 const f = createUploadthing();
 
@@ -14,7 +16,33 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const { configId } = metadata.input;
-      return { configId };
+      const res = await fetch(file.url);
+      const buffer = await res.arrayBuffer();
+      const imgMetadata = await sharp(buffer).metadata();
+      const { width, height } = imgMetadata;
+
+      if (!configId) {
+        const configuration = await prisma.configuration.create({
+          data: {
+            imageUrl: file.url,
+            height: height || 500,
+            width: width || 500,
+          }
+        })
+
+        return { configId: configuration.id }
+      } else {
+        const updatedConfiguration = await prisma.configuration.update({
+          where: {
+            id: configId,
+          },
+          data: {
+            croppedImageUrl: file.url
+          }
+        })
+
+        return { configId: configId }
+      }
     }),
 } satisfies FileRouter;
  
