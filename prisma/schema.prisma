@@ -14,9 +14,11 @@ datasource db {
 }
 
 model Configuration {
-  id            String   @id @default(cuid())
-  width         Int
-  height        Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  width           Int
+  height          Int
+  imageUrl        String
+  croppedImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
