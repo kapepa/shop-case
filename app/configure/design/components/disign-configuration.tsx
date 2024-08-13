@@ -3,17 +3,18 @@
 import { HandleComponent } from "@/components/handle-component";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { Configuration } from "@prisma/client";
-import Image from "next/image";
-import { FC, useState } from "react";
+import  ImageNext from "next/image";
+import { FC, useRef, useState } from "react";
 import { Rnd } from "react-rnd"
 import { RadioGroup } from '@headlessui/react'
 import { COLORS, FINISHES, MATERIALS, MODELS } from "@/app/validators/option-validator";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
+import { BASE_PRICE } from "@/config/product";
 
 
 type DisignTypes = Pick<Configuration,  "width" | "height">
@@ -32,29 +33,93 @@ interface OptionsState {
 }
 
 const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl, imageDimensions }) => {
+  const phoneCaseRef = useRef<HTMLDivElement>(null);
+  const containerCaseRef = useRef<HTMLDivElement>(null);
+
   const [options, setOptions] = useState<OptionsState>({
     color: COLORS[0],
     model: MODELS.options[0],
     material: MATERIALS.options[0],
     finish: FINISHES.options[0],
-  })
+  });
 
+  const [renderedDimension, setRenderedDimension] = useState({
+    width: imageDimensions.width / 4,
+    height: imageDimensions.height / 4,
+  });
+
+  const [renderedPosition, setRenderedPosition] = useState({
+    x: 150,
+    y: 205,
+  });
+
+  async function saveConfiguration() {
+    try {
+      const { left: contLeft, top: contTop } = containerCaseRef.current!.getBoundingClientRect();
+      const { left: caseLeft, top: caseTop, width, height } = phoneCaseRef.current!.getBoundingClientRect();
+
+      const leftOffset = caseLeft - contLeft;
+      const topOffset = caseTop - contTop;
+
+      const actualX = renderedPosition.x - leftOffset;
+      const actualY = renderedPosition.y - topOffset;
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+
+      const userImage = new Image();
+      userImage.crossOrigin = "anonymous";
+      userImage.src = imageUrl;
+      await new Promise((resolve) => (userImage.onload = resolve));
+
+      ctx?.drawImage(
+        userImage,
+        actualX,
+        actualY,
+        renderedDimension.width,
+        renderedDimension.height,
+      )
+
+      const base64 = canvas.toDataURL();
+      const base64Data = base64.split(",")[1];
+
+      const blob = base64ToBlob(base64Data, "image/png");
+      const file = new File([blob], 'filename.png', { type: 'image/png' });
+
+    } catch (err) {
+
+    }
+  }
+
+  function base64ToBlob(base64: string, mimeType: string) {
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    return new Blob([byteArray], { type: mimeType })
+  }
 
   return (
     <div
-      className="relative mt-20 grid grid-cols-3 mb-20 pb-20"
+      className="relative mt-20 grid grid-cols-1 lg:grid-cols-3 mb-20 pb-20"
     >
       <div
+        ref={containerCaseRef}
         className="relative h-[37.5rem] overflow-hidden col-span-2 w-full max-w-4xl flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-center focus:outline-none focus:ring-2 focus:ring-primary focus: ring-offset-2"
       >
         <div
           className="relative w-60 bg-opacity-50 pointer-events-none aspect-[896/1831]"
         >
-          <AspectRatio 
+          <AspectRatio
+            ref={phoneCaseRef}
             ratio={896/1831}
             className="pointer-events-none relative z-50 aspect-[896/1831]"
           >
-            <Image 
+            <ImageNext
               fill
               src="/phone-template.png" 
               alt="phone image" 
@@ -67,7 +132,7 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
           <div
             className={cn(
               'absolute inset-0 left-[3px] top-px right-[3px] bottom-px rounded-[32px]',
-              `bg-${options.color.tw}`
+              options.color.bg,
             )}
           />
         </div>
@@ -80,6 +145,18 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
             width: imageDimensions.width / 4,
             height: imageDimensions.height /4,
           }}
+          onResizeStop={(_, __, ref, ___, {x, y}) => {
+            setRenderedDimension({
+              height: parseInt(ref.style.height.slice(0, 2)),
+              width: parseInt(ref.style.width.slice(0, 2)),
+            });
+
+            setRenderedPosition({ x, y });
+          }}
+          onDragStop={(_, data) => {
+            const { x, y } = data;
+            setRenderedPosition({ x, y });
+          }}
           lockAspectRatio
           resizeHandleComponent={{
             bottomRight: <HandleComponent/>,
@@ -91,7 +168,7 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
           <div
             className="relative w-full h-full"
           >
-            <Image
+            <ImageNext
               fill
               src={imageUrl}
               alt="your image"
@@ -137,14 +214,13 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
                           cn(
                             `relative -m-0.5 flex cursor-pointer items-center justify-center rounded-full p-0.5 active:ring-0 focus:ring-0 active:outline-none focus:outline-none border-solid border-2 border-transparent`,
                             {
-                              [`border-${color.tw}`]: active || checked,
-                            }
+                              [color.border]: active || checked,
+                            },
                           )
                         }>
                         <span
                           className={cn(
-                            `bg-${color.tw}`,
-                            'h-8 w-8 rounded-full border border-black border-opacity-10'
+                            `h-8 w-8 rounded-full border border-black border-opacity-10 ${color.bg}`,
                           )}
                         />
                       </RadioGroup.Option>
@@ -260,6 +336,16 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
                                 }
                               </span>
                             </span>
+                            <RadioGroup.Description
+                              as="span"
+                              className="mt-2 flex text-sm sm:ml-4 sm:mt-0 sm:flex-col sm:text-right"
+                            >
+                              <span
+                                className="font-medium text-gray-900"
+                              >
+                                {formatPrice(option.price / 100)}
+                              </span>
+                            </RadioGroup.Description>
                           </RadioGroup.Option>
                         ))
                       }
@@ -270,6 +356,37 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
             </div>
           </div>
         </ScrollArea>
+
+        <div
+          className="w-full px-8 h-16 bg-white"
+        >
+          <div
+            className="h-px w-full bg-zinc-200"
+          />
+          <div
+            className="w-full h-full flex justify-end items-center"
+          >
+            <div
+              className="w-full flex gap-6 items-center"
+            >
+              <p
+                className="font-medium whitespace-nowrap"
+              >
+                {formatPrice( (BASE_PRICE + options.finish.price + options.material.price) / 100)}
+              </p>
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={saveConfiguration}
+              >
+                Continue
+                <ArrowRight
+                  className="h-4 w-4 ml-1.5 inline"
+                />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
