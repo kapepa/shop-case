@@ -15,6 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import { BASE_PRICE } from "@/config/product";
+import { useUploadThing } from "@/lib/uploadthing";
+import { useToast } from "@/components/ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { SaveConfigDto } from "@/app/dto/save-config.dto";
 
 
 type DisignTypes = Pick<Configuration,  "width" | "height">
@@ -33,6 +37,8 @@ interface OptionsState {
 }
 
 const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl, imageDimensions }) => {
+  const { toast } = useToast();
+
   const phoneCaseRef = useRef<HTMLDivElement>(null);
   const containerCaseRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +58,15 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
     x: 150,
     y: 205,
   });
+
+  const {} = useMutation({
+    mutationKey: ["save-config"],
+    mutationFn: async (props: SaveConfigDto) => {
+      
+    }
+  })
+
+  const { startUpload } = useUploadThing("imageUploader");
 
   async function saveConfiguration() {
     try {
@@ -88,8 +103,13 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
       const blob = base64ToBlob(base64Data, "image/png");
       const file = new File([blob], 'filename.png', { type: 'image/png' });
 
+      await startUpload([file], {configId})
     } catch (err) {
-
+      toast({
+        title: 'Something went wrong',
+        description: "Tere was a problem saving your config, please try again.",
+        variant: "destructive",
+      })
     }
   }
 
