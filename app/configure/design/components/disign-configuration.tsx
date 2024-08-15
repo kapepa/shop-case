@@ -19,6 +19,9 @@ import { useUploadThing } from "@/lib/uploadthing";
 import { useToast } from "@/components/ui/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { SaveConfigDto } from "@/app/dto/save-config.dto";
+import { saveConfig } from "../actions";
+import { useRouter } from "next/navigation";
+import { RoutesPaths } from "@/types/enums";
 
 
 type DisignTypes = Pick<Configuration,  "width" | "height">
@@ -38,7 +41,8 @@ interface OptionsState {
 
 const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl, imageDimensions }) => {
   const { toast } = useToast();
-
+  const router = useRouter();
+  
   const phoneCaseRef = useRef<HTMLDivElement>(null);
   const containerCaseRef = useRef<HTMLDivElement>(null);
 
@@ -59,10 +63,23 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
     y: 205,
   });
 
-  const {} = useMutation({
+  const { mutate } = useMutation({
     mutationKey: ["save-config"],
     mutationFn: async (props: SaveConfigDto) => {
-      
+      await Promise.all([
+        saveConfiguration(),
+        saveConfig(props),
+      ])
+    },
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "There was an error on our end. Please try again.",
+        variant: "destructive",
+      })
+    },
+    onSuccess: () => {
+      router.push(`${RoutesPaths.ConfigurePreview}?id=${configId}`);
     }
   })
 
@@ -397,7 +414,15 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
               <Button
                 size="sm"
                 className="w-full"
-                onClick={saveConfiguration}
+                onClick={() => {
+                  mutate({
+                    configId,
+                    color: options.color.value,
+                    finish: options.finish.value,
+                    material: options.material.value,
+                    model:  options.model.value,
+                  })
+                }}
               >
                 Continue
                 <ArrowRight

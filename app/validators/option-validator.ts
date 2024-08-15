@@ -1,4 +1,5 @@
 import { PRODUCT_PRICES } from "@/config/product";
+import { CaseFinish } from "@prisma/client";
 
 export const COLORS = [
   {
@@ -74,13 +75,13 @@ export const FINISHES = {
   options: [
     {
       label: "Smooth Finish",
-      value: "smooth",
+      value: CaseFinish.smooth,
       description: undefined,
       price: PRODUCT_PRICES.finish.smooth
     },
     {
       label: "Texture Finish",
-      value: "texture",
+      value: CaseFinish.textured,
       description: "Soft grippy texture",
       price: PRODUCT_PRICES.finish.textured
     },
