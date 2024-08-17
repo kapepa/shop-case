@@ -11,14 +11,22 @@ import { ArrowRight, Check } from "lucide-react";
 import { FC, useEffect, useState } from "react";
 import Confetti from 'react-dom-confetti';
 import { createCheckoutSession } from "../actions";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { LoginModal } from "@/components/login-modal";
 
 interface DesignPreviewProps {
   configuration: Configuration,
 }
 
 const DesignPreview: FC<DesignPreviewProps> = (props) => {
+  const { toast } = useToast();
+  const router = useRouter();
+  const { user } = useKindeBrowserClient()
   const { configuration: { id, croppedImageUrl, color, model, finish, material } } = props;
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setShowConfetti(true);
@@ -31,12 +39,30 @@ const DesignPreview: FC<DesignPreviewProps> = (props) => {
   if (material === "polycarbonate") totalPrice += PRODUCT_PRICES.material.polycarbonate;
   if (finish === "textured") totalPrice += PRODUCT_PRICES.finish.textured;
 
-  const {} = useMutation({
+  const { mutate } = useMutation({
     mutationKey: ["get-checkout-session"],
-    mutationFn: () => {
-      createCheckoutSession({ configId: id })
+    mutationFn: createCheckoutSession,
+    onSuccess: (({url}) => {
+      if (!!url) router.push(url)
+      else throw new Error("Unable to retrieve payment URL.")
+    }),
+    onError: () => {
+      toast({
+        title: "Something went wrong",
+        description: "There was an error on our end. Please  try again.",
+        variant: "destructive",
+      })
     }
-  })
+  });
+
+  const handleCheckout = () => {
+    if (user) {
+      mutate({ configId: id })
+    } else {
+      window.localStorage.setItem("configuration", id);
+      setIsLoginModalOpen(true);
+    }
+  }
 
   return (
     <>
@@ -52,6 +78,12 @@ const DesignPreview: FC<DesignPreviewProps> = (props) => {
           }}
         />
       </div>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        setIsOpen={setIsLoginModalOpen}
+      />
+
       <div
         className="mt-20 grid grid-cols-1 text-sm sm:grid-cols-12 sm:grid-rows-1 sm:gap-x-6 md:gap-x-8 lg:gap-x-12"
       >
@@ -218,6 +250,7 @@ const DesignPreview: FC<DesignPreviewProps> = (props) => {
               className="mt-8 flex justify-end pb-12"
             >
               <Button
+                onClick={handleCheckout}
                 className="px-4 sm:px-6 lg:px-8"
               >
                 Check out
