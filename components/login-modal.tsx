@@ -61,7 +61,7 @@ const LoginModal: FC<LoginModalProps> = (props) => {
           <RegisterLink
             className={buttonVariants({ variant: "default" })}
           >
-            Register
+            Sing up
           </RegisterLink>
         </DialogFooter>
       </DialogContent>
