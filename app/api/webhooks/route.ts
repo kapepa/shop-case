@@ -6,8 +6,6 @@ import Stripe from "stripe";
 import { Resend } from 'resend';
 import { OrderReceivedEmail } from "@/components/emails/order-received-email";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST (req: NextRequest) {
   try {
     const body = await req.text();
@@ -60,6 +58,8 @@ export async function POST (req: NextRequest) {
           }
         }
       })
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
       
       await resend.emails.send({
         from: "CaseCobra <hellow@joshtriedcoding.com>",
