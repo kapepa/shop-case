@@ -1,13 +1,15 @@
 import { ShippingAddress } from "@prisma/client";
-import { Body, Container, Head, Heading, Html, Img, Preview, Section } from "@react-email/components";
+import { Body, Column, Container, Head, Heading, Hr, Html, Img, Preview, Row, Section, Text } from "@react-email/components";
 import { FC } from "react";
 
 interface OrderReceivedEmailProps {
-  shippingAddress: ShippingAddress
+  orderId: string,
+  orderDate: string,
+  shippingAddress: ShippingAddress,
 }
 
 const OrderReceivedEmail: FC<OrderReceivedEmailProps> = (props) => {
-  const { shippingAddress } = props;
+  const { orderId, orderDate, shippingAddress } = props;
 
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
@@ -38,7 +40,95 @@ const OrderReceivedEmail: FC<OrderReceivedEmailProps> = (props) => {
             >
               Thank you for your order!
             </Heading>
+            <Text
+              style={global.text}
+            >
+              We're preparing everything for delivery and will notify you one your package has been shipped. Delivery usually takes two days.
+            </Text>
+            <Text
+              style={{...global.text, marginTop: 24}}
+            >
+              If you have any question regarding your order, please feel free to contact us with your order number and we're here to help.
+            </Text>
           </Section>
+          <Hr
+            style={global.hr}
+          />
+          <Section
+            style={global.defaultPadding}
+          >
+            <Text
+              style={adressTitle}
+            >
+              Shipping to: {shippingAddress.name}
+            </Text>
+            <Text
+              style={{...global.text, fontSize: 14}}
+            >
+              {shippingAddress.street}, {shippingAddress.city}, {""}, {shippingAddress.state}, {shippingAddress.postalCode}
+            </Text>
+          </Section>
+          <Hr
+            style={global.hr}
+          />
+          <Section
+            style={global.defaultPadding}
+          >
+            <Row
+              style={{display: "inline-flex", marginBottom: 40}}
+            >
+              <Column
+                style={{width: 170}}
+              >
+                <Text
+                  style={global.paragraphWithBold}
+                >
+                  Order Number
+                </Text>
+                <Text
+                  style={track.number}
+                >
+                  {orderId}
+                </Text>
+              </Column>
+              <Column>
+                <Text
+                  style={global.paragraphWithBold}
+                >
+                  Order Date
+                </Text>
+                <Text
+                  style={track.number}
+                >
+                  {orderDate}
+                </Text>
+              </Column>
+            </Row>
+          </Section>
+          <Hr
+            style={global.hr}
+          />
+          <Section
+            style={paddingY}
+          >
+            <Row>
+              <Text
+                style={{
+                  ...footer.text, paddingTop: 30, paddingBottom: 30
+                }}
+              >
+                Plase connect us if you have any question (If you reply to this email, we won't be able to see it.)
+              </Text>
+            </Row>
+            <Row>
+              <Text
+                style={footer.text}
+              >
+                CaseCobra, Inc, All Rights Reserved.
+              </Text>
+            </Row>
+          </Section>
+
         </Container>
       </Body>
     </Html>

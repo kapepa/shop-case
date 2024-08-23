@@ -63,7 +63,7 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
     y: 205,
   });
 
-  const { mutate } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationKey: ["save-config"],
     mutationFn: async (props: SaveConfigDto) => {
       await Promise.all([
@@ -414,6 +414,9 @@ const DisignConfiguration: FC<DisignConfigurationProps> = ({ configId, imageUrl,
               <Button
                 size="sm"
                 className="w-full"
+                disabled={isPending}
+                isLoading={isPending}
+                loadingText="Saving"
                 onClick={() => {
                   mutate({
                     configId,
