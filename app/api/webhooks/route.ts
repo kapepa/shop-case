@@ -85,4 +85,4 @@ export async function POST (req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ message: "Something went wrong", ok: false }, { status: 500 });
   }
-}
+};
